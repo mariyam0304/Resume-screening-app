@@ -1,0 +1,85 @@
+﻿const CandidateView = {
+  async view(query) {
+    const id = query && query.id;
+    const view = document.getElementById('view');
+    if (!id) {
+      const list = await API.listCandidates();
+      view.innerHTML =
+        '<h1>Candidate Database</h1>' +
+        '<div class="card">' +
+          '<table>' +
+            '<thead><tr><th>Name</th><th>Location</th><th>Experience</th><th>Designation</th><th>Status</th><th></th></tr></thead>' +
+            '<tbody>' +
+              list.map(c =>
+                '<tr>' +
+                  '<td>' + c.name + '</td>' +
+                  '<td>' + (c.location || '-') + '</td>' +
+                  '<td>' + (c.experience || 0) + 'y</td>' +
+                  '<td>' + (c.designation || '-') + '</td>' +
+                  '<td>' + c.status + '</td>' +
+                  '<td><a class="btn btn-outline" href="#candidate?id=' + c.id + '">Open</a></td>' +
+                '</tr>'
+              ).join('') +
+            '</tbody>' +
+          '</table>' +
+        '</div>';
+      return;
+    }
+
+    const c = await API.getCandidate(id);
+    const notes = await API.getNotes(id);
+    view.innerHTML =
+      '<h1>' + c.name + '</h1>' +
+      '<div class="card">' +
+        '<div class="row">' +
+          '<div><strong>Email:</strong> ' + (c.email || '-') + '</div>' +
+          '<div><strong>Phone:</strong> ' + (c.phone || '-') + '</div>' +
+          '<div><strong>Location:</strong> ' + (c.location || '-') + '</div>' +
+        '</div>' +
+        '<div class="row" style="margin-top:8px;">' +
+          '<div><strong>Experience:</strong> ' + c.experience + 'y</div>' +
+          '<div><strong>Current:</strong> ' + (c.current_designation || '-') + ' @ ' + (c.current_company || '-') + '</div>' +
+          '<div><strong>Notice:</strong> ' + (c.notice || '-') + '</div>' +
+        '</div>' +
+        '<div class="row" style="margin-top:8px;">' +
+          '<div><strong>Expected CTC:</strong> ' + (c.expected_salary || '-') + '</div>' +
+          '<div><strong>Education:</strong> ' + (c.education || '-') + '</div>' +
+        '</div>' +
+        '<h3>Skills</h3>' +
+        '<div>' + ((c.skills || []).map(s => '<span class="chip">' + s + '</span>').join('') || '<span class="muted">None</span>') + '</div>' +
+      '</div>' +
+      '<div class="card">' +
+        '<h3>Change Status</h3>' +
+        '<div class="row">' +
+          '<select id="status-select">' +
+            ['New','Shortlisted','Interview Scheduled','Rejected'].map(s => '<option' + (s === c.status ? ' selected' : '') + '>' + s + '</option>').join('') +
+          '</select>' +
+          '<button class="btn" onclick="CandidateView.saveStatus(' + c.id + ')">Save</button>' +
+          '<button class="btn btn-outline" onclick="window.open(\'/api/resume/' + c.id + '/download\')">Download Resume</button>' +
+        '</div>' +
+      '</div>' +
+      '<div class="card">' +
+        '<h3>Recruiter Notes</h3>' +
+        '<textarea id="note-text" placeholder="Add a note..."></textarea>' +
+        '<input type="text" id="follow-up" placeholder="Follow-up date (YYYY-MM-DD)" style="margin-top:8px;" />' +
+        '<button class="btn" onclick="CandidateView.saveNote(' + c.id + ')" style="margin-top:8px;">Add Note</button>' +
+        '<div style="margin-top:12px;">' +
+          notes.map(n => '<div class="card" style="padding:10px;"><div class="muted">' + n.created_at + '</div>' + n.note + (n.follow_up_date ? '<div class="muted">Follow-up: ' + n.follow_up_date + '</div>' : '') + '</div>').join('') +
+        '</div>' +
+      '</div>';
+  },
+
+  async saveStatus(id) {
+    const status = document.getElementById('status-select').value;
+    await API.setStatus(id, status);
+    alert('Status updated');
+  },
+
+  async saveNote(id) {
+    const note = document.getElementById('note-text').value;
+    const follow_up_date = document.getElementById('follow-up').value;
+    if (!note) return;
+    await API.addNote(id, { note: note, follow_up_date: follow_up_date });
+    location.reload();
+  },
+};

@@ -1,0 +1,26 @@
+﻿from .auth import auth_bp
+from .jd import jd_bp
+from .resume import resume_bp
+from .screening import screening_bp
+from .candidate import candidate_bp
+from .questions import questions_bp
+from .export import export_bp
+from .analytics import analytics_bp
+from .email import email_bp
+from .interviews import interviews_bp
+from .search import search_bp
+from .templates import templates_bp
+
+def register_routes(app):
+    app.register_blueprint(auth_bp, url_prefix='/api/auth')
+    app.register_blueprint(jd_bp, url_prefix='/api/jd')
+    app.register_blueprint(resume_bp, url_prefix='/api/resume')
+    app.register_blueprint(screening_bp, url_prefix='/api/screening')
+    app.register_blueprint(candidate_bp, url_prefix='/api/candidate')
+    app.register_blueprint(questions_bp, url_prefix='/api/questions')
+    app.register_blueprint(export_bp, url_prefix='/api/export')
+    app.register_blueprint(analytics_bp, url_prefix='/api/analytics')
+    app.register_blueprint(email_bp, url_prefix='/api/email')
+    app.register_blueprint(interviews_bp, url_prefix='/api/interviews')
+    app.register_blueprint(search_bp, url_prefix='/api/search')
+    app.register_blueprint(templates_bp, url_prefix='/api/templates')

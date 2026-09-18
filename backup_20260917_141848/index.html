@@ -1,0 +1,41 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>SmartHire AI - Intelligent Resume Screening</title>
+<link rel="stylesheet" href="/css/styles.css" />
+</head>
+<body>
+<div id="app-root">
+  <header class="topbar">
+    <div class="brand">SmartHire AI</div>
+    <nav id="main-nav" class="nav"></nav>
+    <div class="user-area">
+      <span id="user-label"></span>
+      <button id="logout-btn" class="btn btn-outline" hidden>Logout</button>
+    </div>
+  </header>
+  <main id="view" class="view"></main>
+</div>
+
+<div id="toast-container" class="toast-container"></div>
+
+<script src="/js/api.js"></script>
+<script src="/js/auth.js"></script>
+<script src="/js/toast.js"></script>
+<script src="/js/router.js"></script>
+
+<script src="/js/dashboard.js"></script>
+<script src="/js/jd.js"></script>
+<script src="/js/upload.js"></script>
+<script src="/js/screening.js"></script>
+<script src="/js/candidate.js"></script>
+<script src="/js/compare.js"></script>
+<script src="/js/questions.js"></script>
+
+<script>
+  document.addEventListener('DOMContentLoaded', () => Router.init());
+</script>
+</body>
+</html>

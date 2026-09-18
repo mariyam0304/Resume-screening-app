@@ -1,0 +1,22 @@
+Rahul Sharma
+rahul.sharma@example.com | +91-9876543210 | Hyderabad
+
+Summary
+Backend engineer with 6.2 years of experience building enterprise web applications using Java, Spring Framework, and REST APIs.
+
+Experience
+Senior Software Engineer – TechCorp (2019 – Present)
+Developed REST APIs and microservices using Spring and Java.
+Worked with MySQL, Kafka, and Docker.
+
+Software Engineer – InfoSys (2017 – 2019)
+Built internal tools using Java and SQL.
+
+Skills
+Java, Spring, Spring Framework, REST API, SQL, MySQL, Docker, Kafka, Git
+
+Education
+B.Tech in Computer Science, JNTU Hyderabad, 2017
+
+Notice Period: 30 days
+Expected CTC: ₹22 LPA

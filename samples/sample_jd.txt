@@ -1,0 +1,21 @@
+Java Backend Developer – Hyderabad (Hybrid)
+
+Responsibilities:
+Design and develop REST APIs using Java and Spring Boot.
+Work with MySQL and microservices.
+Collaborate with front-end and DevOps teams.
+
+Required Skills:
+Must have Java
+Must have Spring Boot
+REST API
+SQL
+
+Preferred Skills:
+AWS experience is a plus
+Docker is preferred
+
+Experience: 5+ years required
+Education: Bachelor's degree in Computer Science or related field
+Notice Period: Immediate joiner preferred
+Salary: ₹18–25 LPA

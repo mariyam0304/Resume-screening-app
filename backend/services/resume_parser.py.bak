@@ -1,0 +1,207 @@
+﻿import re
+from datetime import datetime
+from .jd_parser import find_skills, extract_years
+
+EMAIL_RE = re.compile(r'[\w\.-]+@[\w\.-]+\.\w+')
+PHONE_RE = re.compile(r'(\+?\d[\d\s\-()]{8,}\d)')
+NAME_HINT = re.compile(r'^[A-Z][a-z]+(?:\s+[A-Z][a-z]+){1,3}$')
+
+COMMON_LOCATIONS = [
+    'hyderabad','bangalore','bengaluru','mumbai','navi mumbai','pune','chennai','delhi','noida',
+    'gurgaon','gurugram','kolkata','ahmedabad','jaipur','kochi','trivandrum','remote'
+]
+
+NOTICE_RE = re.compile(r'(\d+\s*(?:days?|weeks?|months?)|immediate)', re.I)
+SALARY_RE = re.compile(r'(?:₹|rs\.?|inr|\$)\s?[\d,]+(?:k|lpa|per annum)?', re.I)
+
+# ---------- Experience extraction patterns ----------
+
+# Pattern 1: "6 years", "6.5 yrs", "6+ years", "6 years and 3 months"
+EXP_PATTERNS = [
+    re.compile(r'(\d+(?:\.\d+)?)\s*\+?\s*(?:years?|yrs?)', re.I),
+    re.compile(r'(\d+)\s*years?\s*(?:and)?\s*(\d+)\s*months?', re.I),
+    re.compile(r'(\d+)\s*months?\s*(?:of\s*)?experience', re.I),
+    re.compile(r'experience[^\d]{0,20}(\d+(?:\.\d+)?)', re.I),
+]
+
+# Pattern 2: year ranges "2017 - 2021", "2019 to Present", "2020–current"
+YEAR_RANGE_RE = re.compile(
+    r'(19\d{2}|20\d{2})\s*(?:-|–|to|—)\s*(19\d{2}|20\d{2}|present|current|now|till date)',
+    re.I
+)
+
+
+def _clean(text):
+    return re.sub(r'\s+', ' ', text or '').strip()
+
+
+def _extract_experience_from_years(text):
+    """Sum total years across all date ranges like 2017-2020, 2020-Present."""
+    now_year = datetime.utcnow().year
+    total_years = 0.0
+    seen_ranges = []
+
+    for m in YEAR_RANGE_RE.finditer(text):
+        start = int(m.group(1))
+        end_raw = m.group(2).strip().lower()
+        if end_raw in ('present', 'current', 'now', 'till date'):
+            end = now_year
+        else:
+            end = int(end_raw)
+        if start < 1970 or end > now_year + 1 or end < start:
+            continue
+        # avoid counting overlapping ranges
+        overlap = False
+        for s, e in seen_ranges:
+            if not (end < s or start > e):
+                overlap = True
+                break
+        if overlap:
+            continue
+        seen_ranges.append((start, end))
+        total_years += (end - start)
+
+    return total_years
+
+
+def _extract_experience_from_text(text):
+    """Find explicit mentions like '6 years', '6+ years', '18 months'."""
+    best = 0.0
+    for pat in EXP_PATTERNS:
+        for m in pat.finditer(text):
+            groups = m.groups()
+            try:
+                if len(groups) == 2 and groups[0] and groups[1]:
+                    # years + months pattern
+                    val = float(groups[0]) + float(groups[1]) / 12.0
+                else:
+                    val = float(groups[0])
+                    # if matched "months" pattern, convert
+                    if 'month' in m.group(0).lower():
+                        val = val / 12.0
+            except (TypeError, ValueError):
+                continue
+            if val > best:
+                best = val
+    return best
+
+
+def _extract_total_experience(text):
+    """
+    Return the best estimate of total experience in years.
+    Strategy:
+      1. Extract from year ranges (most reliable for resume layouts)
+      2. Extract from explicit text mentions
+      3. Take the max of the two, but cap at 50.
+    """
+    from_ranges = _extract_experience_from_years(text)
+    from_text = _extract_experience_from_text(text)
+    best = max(from_ranges, from_text)
+    return round(min(best, 50.0), 1)
+
+
+# ---------- Parsing ----------
+
+def parse_resume(text):
+    text = text or ''
+    lines = [l.strip() for l in text.split('\n') if l.strip()]
+
+    # Name
+    name = ''
+    for line in lines[:6]:
+        if NAME_HINT.match(line) and len(line.split()) <= 4:
+            name = line
+            break
+    if not name and lines:
+        name = lines[0][:80]
+
+    # Contact
+    emails = EMAIL_RE.findall(text)
+    phones = PHONE_RE.findall(text)
+    phone = phones[0] if phones else ''
+
+    # Location
+    location = ''
+    low = text.lower()
+    for loc in COMMON_LOCATIONS:
+        if loc in low:
+            location = loc.title()
+            break
+
+    # Experience (enhanced)
+    exp_years = _extract_total_experience(text)
+
+    # Education
+    education = ''
+    for line in lines:
+        l = line.lower()
+        if any(k in l for k in ['b.tech','b.e','bsc','b.com','bca','mca','mba',
+                                 'bachelor','master','degree','phd','diploma']):
+            education = line[:150]
+            break
+
+    # Company / designation from labelled lines
+    company = ''
+    designation = ''
+    for line in lines:
+        l = line.lower()
+        if 'company' in l and ':' in line:
+            company = line.split(':', 1)[1].strip()
+        if 'designation' in l and ':' in line:
+            designation = line.split(':', 1)[1].strip()
+
+    if not designation:
+        for line in lines[:20]:
+            if re.search(
+                r'(developer|engineer|manager|analyst|consultant|executive|'
+                r'coordinator|designer|architect|tester|specialist|lead|intern|'
+                r'associate|officer|sales|marketing|hr|accountant|teacher)',
+                line, re.I
+            ):
+                designation = line[:100]
+                break
+
+    # Notice
+    notice = ''
+    nm = NOTICE_RE.search(text)
+    if nm:
+        notice = nm.group(0)
+
+    # Salary
+    salary = ''
+    sm = SALARY_RE.search(text)
+    if sm:
+        salary = sm.group(0)
+
+    # Skills
+    skills = find_skills(text)
+
+    # Experiences (light extraction)
+    experiences = []
+    for m in YEAR_RANGE_RE.finditer(text):
+        experiences.append({
+            'company': company,
+            'designation': designation,
+            'start_date': m.group(1),
+            'end_date': m.group(2),
+            'duration_years': 0,
+            'description': ''
+        })
+
+    return {
+        'name': name,
+        'email': emails[0] if emails else '',
+        'phone': phone,
+        'location': location,
+        'total_experience': exp_years,
+        'relevant_experience': exp_years,
+        'current_company': company,
+        'current_designation': designation,
+        'education': education,
+        'notice_period': notice,
+        'expected_salary': salary,
+        'current_salary': '',
+        'work_mode_compat': 'Flexible',
+        'skills': skills,
+        'experiences': experiences,
+    }

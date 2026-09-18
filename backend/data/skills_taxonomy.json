@@ -1,0 +1,23 @@
+{
+  "it": ["java","python","javascript","typescript","c++","c#","go","ruby","php","kotlin","swift",
+    "spring","spring boot","django","flask","fastapi","node.js","express","react","angular","vue",
+    "html","css","sass","tailwind","bootstrap","rest","rest api","graphql","microservices",
+    "sql","mysql","postgresql","mongodb","oracle","redis","elasticsearch",
+    "aws","azure","gcp","docker","kubernetes","terraform","jenkins","git","github","gitlab","ci/cd",
+    "linux","bash","machine learning","deep learning","nlp","tensorflow","pytorch","pandas","numpy",
+    "data analysis","power bi","tableau","excel","hadoop","spark","kafka",
+    "selenium","junit","pytest","cypress","manual testing","automation testing",
+    "cybersecurity","penetration testing","networking","tcp/ip","firewall"],
+  "non_it": ["sales","business development","b2b","b2c","inside sales","field sales","crm","salesforce",
+    "hubspot","zoho","marketing","digital marketing","seo","sem","social media","content writing",
+    "hr","recruitment","talent acquisition","payroll","onboarding","training",
+    "accounting","finance","tally","quickbooks","sap","gst","taxation","audit",
+    "banking","insurance","loan","underwriting","kyc","aml",
+    "customer support","customer service","voice process","chat support","email support",
+    "operations","logistics","supply chain","inventory","warehouse","procurement",
+    "healthcare","nursing","patient care","medical coding",
+    "teaching","education","curriculum","lesson planning",
+    "legal","compliance","contract","litigation",
+    "manufacturing","production","quality control","lean","six sigma",
+    "retail","hospitality","hotel management","real estate","property"]
+}
