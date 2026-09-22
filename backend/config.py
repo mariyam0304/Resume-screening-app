@@ -18,11 +18,14 @@ class Config:
     MAX_CONTENT_LENGTH = 100 * 1024 * 1024
     ALLOWED_EXTENSIONS = {'pdf', 'docx', 'doc', 'txt'}
 
-    # SSL for Aiven MySQL
+    # ---------- SSL for cloud MySQL (Aiven) ----------
+    # Only enable SSL when we're NOT connecting to localhost.
     _ca_path = os.path.join(os.path.dirname(__file__), 'ca.pem')
+    _is_remote = 'localhost' not in SQLALCHEMY_DATABASE_URI and '127.0.0.1' not in SQLALCHEMY_DATABASE_URI
+
     SQLALCHEMY_ENGINE_OPTIONS = (
         {"connect_args": {"ssl_ca": _ca_path}}
-        if os.path.exists(_ca_path)
+        if (_is_remote and os.path.exists(_ca_path))
         else {}
     )
 
