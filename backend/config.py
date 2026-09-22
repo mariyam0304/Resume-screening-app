@@ -5,8 +5,9 @@ load_dotenv()
 
 class Config:
     SECRET_KEY = os.getenv('SECRET_KEY', 'smarthire-dev-secret-change-me')
-    SQLALCHEMY_DATABASE_URI = os.getenv(
-        'DATABASE_URL',
+    SQLALCHEMY_DATABASE_URI = (
+        os.getenv('MYSQL_URL') or
+        os.getenv('DATABASE_URL') or
         'mysql+pymysql://root:password@localhost/smarthire_db'
     )
     SQLALCHEMY_TRACK_MODIFICATIONS = False
@@ -23,3 +24,4 @@ class Config:
         'location': 0.05,
         'notice': 0.05,
     }
+

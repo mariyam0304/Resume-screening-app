@@ -1,5 +1,6 @@
 ﻿const Router = {
   routes: {
+    // === Existing recruiter app routes ===
     'dashboard': () => Dashboard.render(),
     'create-jd': () => JD.createView(),
     'saved-jds': () => JD.savedView(),
@@ -7,12 +8,28 @@
     'screening': (q) => Screening.view(q),
     'candidate': (q) => CandidateView.view(q),
     'compare': () => Compare.view(),
+    'leaderboard': () => Leaderboard.view(),
+    'jd-funnel': (q) => JDFunnel.view(q),
     'questions': (q) => Questions.view(q),
     'database': () => CandidateView.view({}),
+
+    // === NEW: Home + portal pages ===
+    'home': () => Portal.homePage(),
+    'login-recruiter': () => Router.handleRecruiterLogin(),
+    'recruiter-register': () => Portal.recruiterRegisterPage(),
+    'candidate-register': () => Portal.registerPage(),
+    'candidate-login': () => Portal.loginPage(),
+    'candidate-dashboard': () => Portal.dashboardPage(),
+    'candidate-profile': () => Portal.profilePage(),
+    'candidate-applications': () => Portal.applicationsPage(),
+    'browse-jobs': () => Portal.browseJobsPage(),
+    'applications-inbox': (q) => ApplicationsInbox.view(q),
+    'interview-questions': (q) => InterviewQuestions.view(q),
+    'job-detail': (q) => Portal.jobDetailPage(q),
   },
 
   parseHash() {
-    const hash = location.hash.replace(/^#/, '') || 'dashboard';
+    const hash = location.hash.replace(/^#/, '') || 'home';
     const parts = hash.split('?');
     const route = parts[0];
     const query = {};
@@ -33,14 +50,27 @@
 
   async handle() {
     const parsed = this.parseHash();
-    if (!Auth.user && parsed.route !== 'login') {
-      this.renderLogin();
+
+    // If logged in as candidate and trying to visit a non-portal route
+    if (typeof Portal !== 'undefined' && Portal.user && !parsed.route.startsWith('candidate-') && !parsed.route.startsWith('browse-') && parsed.route !== 'home' && parsed.route !== 'login-recruiter') {
+      // Allow through — recruiter routes are separate; candidate portal handles its own nav
+    }
+
+    // If not logged in as recruiter AND not logged in as candidate AND not on public page → show homepage
+    const publicRoutes = ['home', 'candidate-register', 'candidate-login', 'login-recruiter','recruiter-register', 'login'];
+    const candidateRoutes = ['candidate-dashboard', 'candidate-profile', 'candidate-applications', 'browse-jobs'];
+    const candidateLoggedIn = typeof Portal !== 'undefined' && Portal.user;
+
+    if (!Auth.user && !candidateLoggedIn && publicRoutes.indexOf(parsed.route) === -1) {
+      this.renderHomeOrLogin(parsed.route);
       return;
     }
+
     document.querySelectorAll('.nav a').forEach(a => {
       a.classList.toggle('active', a.dataset.route === parsed.route);
     });
-    const fn = this.routes[parsed.route] || this.routes['dashboard'];
+
+    const fn = this.routes[parsed.route] || this.routes['home'];
     try {
       await fn(parsed.query);
     } catch (e) {
@@ -50,47 +80,51 @@
     }
   },
 
-  renderLogin() {
+  renderHomeOrLogin(route) {
+    // If user tried to access recruiter route without login → show old login page
+    if (route === 'login' || route === 'login-recruiter') {
+      this.renderRecruiterLogin();
+      return;
+    }
+    // Otherwise show the new homepage
+    if (typeof Portal !== 'undefined') {
+      Portal.homePage();
+    }
+  },
+
+  handleRecruiterLogin() {
+    this.renderRecruiterLogin();
+  },
+
+  renderRecruiterLogin() {
     const view = document.getElementById('view');
     view.innerHTML =
       '<div class="login-wrap">' +
-        '<h1>SmartHire AI</h1>' +
-        '<div class="tabs">' +
-          '<div class="tab active" id="tab-login">Login</div>' +
-          '<div class="tab" id="tab-register">Register</div>' +
-        '</div>' +
+        '<h1>Recruiter Login</h1>' +
         '<input id="l-username" placeholder="Username" />' +
-        '<input id="l-email" placeholder="Email (register only)" style="margin-top:8px;" />' +
         '<input id="l-password" type="password" placeholder="Password" style="margin-top:8px;" />' +
         '<button class="btn" style="margin-top:12px;width:100%;" id="l-submit">Login</button>' +
         '<p class="muted" style="text-align:center;margin-top:10px;">Default: admin / admin123</p>' +
+        '<p class="muted" style="text-align:center;margin-top:6px;"><a href="#home">← Back to Home</a></p>' +
       '</div>';
 
-    let mode = 'login';
-    const setTab = (m) => {
-      mode = m;
-      document.getElementById('tab-login').classList.toggle('active', m === 'login');
-      document.getElementById('tab-register').classList.toggle('active', m === 'register');
-      document.getElementById('l-submit').textContent = m === 'login' ? 'Login' : 'Register';
-    };
-    document.getElementById('tab-login').onclick = () => setTab('login');
-    document.getElementById('tab-register').onclick = () => setTab('register');
     document.getElementById('l-submit').onclick = async () => {
       const u = document.getElementById('l-username').value;
-      const e = document.getElementById('l-email').value;
       const p = document.getElementById('l-password').value;
       try {
-        if (mode === 'login') await Auth.login(u, p);
-        else await Auth.register(u, e, p);
-        Router.handle();
-      } catch (err) { if (typeof Toast !== 'undefined') Toast.error('Authentication failed'); else alert('Login failed'); }
+        await Auth.login(u, p);
+        Router.go('dashboard');
+      } catch (err) { Toast.error('Login failed'); }
     };
   },
 
   async init() {
     await Auth.refresh();
+    if (typeof Portal !== 'undefined') {
+      await Portal.refresh();
+    }
     window.addEventListener('hashchange', () => this.handle());
-    if (!location.hash) location.hash = '#dashboard';
+    if (!location.hash) location.hash = '#home';
     this.handle();
   },
 };
@@ -101,3 +135,7 @@ function statusClass(s) {
   if (s === 'Needs Review') return 'badge-review';
   return 'badge-low';
 }
+
+
+
+

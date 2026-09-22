@@ -45,6 +45,7 @@ const API = {
   getNotes: (id) => api('/candidate/' + id + '/notes'),
   candidateResults: (id) => api('/candidate/' + id + '/results'),
   deleteCandidate: (id) => api('/candidate/' + id, { method: 'DELETE' }),
+  updateCandidate: (id, body) => api('/candidate/' + id, { method: 'PUT', body: body }),
   bulkDeleteCandidates: (ids) => api('/candidate/bulk-delete', { method: 'POST', body: { ids: ids } }),
 
   generateQuestions: (jdId) => api('/questions/generate', { method: 'POST', body: { jd_id: jdId } }),
@@ -69,5 +70,6 @@ const API = {
   getWeights: () => api('/screening/weights'),
   previewResumeUrl: (cid) => API_BASE + '/resume/' + cid + '/preview',
 };
+
 
 

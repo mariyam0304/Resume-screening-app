@@ -37,11 +37,13 @@ def run_screening():
     jd = JD.query.filter_by(id=jd_id, user_id=current_user.id).first_or_404()
     jd_data = _load_jd_data(jd)
 
+    owner_filter = (Candidate.owner_user_id == current_user.id) | (Candidate.owner_user_id.is_(None))
     if not candidate_ids:
-        candidates = Candidate.query.all()
+        candidates = Candidate.query.filter(owner_filter).all()
     else:
-        candidates = Candidate.query.filter(Candidate.id.in_(candidate_ids)).all()
-
+        candidates = Candidate.query.filter(
+            Candidate.id.in_(candidate_ids) & owner_filter
+        ).all()
     results = []
     for c in candidates:
         ScreeningResult.query.filter_by(jd_id=jd.id, candidate_id=c.id).delete()

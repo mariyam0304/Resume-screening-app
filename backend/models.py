@@ -62,6 +62,7 @@ class JDRequirement(db.Model):
 class Candidate(db.Model):
     __tablename__ = 'candidates'
     id = db.Column(db.Integer, primary_key=True)
+    owner_user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
     name = db.Column(db.String(150))
     email = db.Column(db.String(150))
     phone = db.Column(db.String(50))
@@ -223,3 +224,99 @@ class VideoNote(db.Model):
     timestamp_sec = db.Column(db.Float, default=0)
     text = db.Column(db.Text)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+
+# ============================================================
+# PHASE 1 — Two-Portal System Tables
+# ============================================================
+
+class CandidateUser(db.Model):
+    """Separate user table for candidates. Isolated from recruiter users."""
+    __tablename__ = 'candidate_users'
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(80), unique=True, nullable=False)
+    email = db.Column(db.String(120), unique=True, nullable=False)
+    password_hash = db.Column(db.String(255), nullable=False)
+
+    full_name = db.Column(db.String(150))
+    phone = db.Column(db.String(50))
+    location = db.Column(db.String(150))
+    education = db.Column(db.String(300))
+    experience_years = db.Column(db.Float, default=0)
+    skills_summary = db.Column(db.Text)
+
+    resume_path = db.Column(db.String(500))
+    resume_filename = db.Column(db.String(300))
+    resume_hash = db.Column(db.String(64))
+
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    def set_password(self, pwd):
+        from werkzeug.security import generate_password_hash
+        self.password_hash = generate_password_hash(pwd)
+
+    def check_password(self, pwd):
+        from werkzeug.security import check_password_hash
+        return check_password_hash(self.password_hash, pwd)
+
+    def get_id(self):
+        return 'candidate_' + str(self.id)
+
+    @property
+    def is_authenticated(self): return True
+    @property
+    def is_anonymous(self): return False
+    @property
+    def is_active(self): return True
+
+
+class Application(db.Model):
+    """Links a candidate to a JD they applied for."""
+    __tablename__ = 'applications'
+    id = db.Column(db.Integer, primary_key=True)
+    candidate_user_id = db.Column(db.Integer, db.ForeignKey('candidate_users.id'), nullable=False)
+    jd_id = db.Column(db.Integer, db.ForeignKey('jds.id'), nullable=False)
+
+    applied_resume_path = db.Column(db.String(500))
+    applied_resume_filename = db.Column(db.String(300))
+    cover_note = db.Column(db.Text)
+
+    match_score = db.Column(db.Float, default=0)
+    status = db.Column(db.String(40), default='Applied')
+    # Applied / Under Review / Shortlisted / Interview Scheduled / Rejected
+
+    recruiter_note = db.Column(db.Text)
+    applied_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
+class CandidateNotification(db.Model):
+    """Notifies candidates about status changes."""
+    __tablename__ = 'candidate_notifications'
+    id = db.Column(db.Integer, primary_key=True)
+    candidate_user_id = db.Column(db.Integer, db.ForeignKey('candidate_users.id'), nullable=False)
+    application_id = db.Column(db.Integer, db.ForeignKey('applications.id'), nullable=True)
+    message = db.Column(db.Text)
+    is_read = db.Column(db.Boolean, default=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+
+class InterviewSchedule(db.Model):
+    __tablename__ = 'interview_schedules'
+    id = db.Column(db.Integer, primary_key=True)
+    application_id = db.Column(db.Integer, db.ForeignKey('applications.id'), nullable=False)
+    scheduled_at = db.Column(db.String(50), nullable=False)
+    duration_minutes = db.Column(db.Integer, default=30)
+    mode = db.Column(db.String(40), default='Video')
+    meeting_link = db.Column(db.String(300))
+    interviewer_name = db.Column(db.String(150))
+    notes = db.Column(db.Text)
+    status = db.Column(db.String(40), default='Scheduled')
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+
+# ============================================================
+# FEATURE E - Video Interviews
+# ============================================================
+

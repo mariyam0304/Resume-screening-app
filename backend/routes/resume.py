@@ -1,7 +1,7 @@
 ﻿import os
 import hashlib
 from flask import Blueprint, request, jsonify, current_app, send_file
-from flask_login import login_required
+from flask_login import login_required,current_user
 from werkzeug.utils import secure_filename
 from extensions import db
 from models import Candidate, CandidateSkill, CandidateExperience, CandidateStatus
@@ -60,6 +60,7 @@ def upload_resumes():
         parsed = parse_resume(text)
 
         cand = Candidate(
+            owner_user_id=current_user.id,
             name=parsed['name'], email=parsed['email'], phone=parsed['phone'],
             location=parsed['location'], total_experience=parsed['total_experience'],
             relevant_experience=parsed['relevant_experience'],
