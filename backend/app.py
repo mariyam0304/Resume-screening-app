@@ -70,6 +70,25 @@ def create_app():
             return send_from_directory(FRONTEND_DIR, path)
         return send_from_directory(FRONTEND_DIR, 'index.html')
 
+
+    @app.route('/setup-admin-xyz789', methods=['GET'])
+    def setup_admin():
+        """One-time endpoint to create admin user. Remove after use."""
+        from extensions import db
+        from models import User
+        try:
+            db.create_all()
+            existing = User.query.filter_by(username='admin').first()
+            if existing:
+                return jsonify({'status': 'exists', 'message': 'Admin already exists'})
+            u = User(username='admin', email='admin@example.com')
+            u.set_password('admin123')
+            db.session.add(u)
+            db.session.commit()
+            return jsonify({'status': 'created', 'message': 'Admin user created'})
+        except Exception as e:
+            import traceback
+            return jsonify({'status': 'error', 'error': str(e), 'trace': traceback.format_exc()}), 500
     return app
 
 
@@ -82,5 +101,6 @@ if __name__ == '__main__':
     import os
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port, debug=False)
+
 
 
